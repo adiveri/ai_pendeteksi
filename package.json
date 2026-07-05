@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-     "postinstall": "prisma generate && copyfiles -u 5 \"node_modules/@tensorflow/tfjs-backend-wasm/dist/*.wasm\" public/wasm/"
+    "postinstall": "prisma generate && node scripts/copy-wasm.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
