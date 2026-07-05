@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
 import { prisma } from '@/lib/prisma';
 import { classifyImage } from '@/lib/classifier';
 
-export const runtime = 'nodejs';
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+// Konfigurasi validasi
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png'];
 
 export async function POST(request: NextRequest) {
@@ -13,6 +11,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const imageFile = formData.get('image') as File | null;
 
+    // Validasi keberadaan file
     if (!imageFile) {
       return NextResponse.json(
         { error: 'Tidak ada gambar yang diunggah' },
@@ -20,13 +19,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validasi tipe file
     if (!ALLOWED_TYPES.includes(imageFile.type)) {
       return NextResponse.json(
-        { error: 'Format file harus JPG atau PNG' },
+        { error: 'Format file harus JPG, JPEG, atau PNG' },
         { status: 400 }
       );
     }
 
+    // Validasi ukuran file
     if (imageFile.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: 'Ukuran file maksimal 5 MB' },
@@ -34,29 +35,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // baca file langsung ke memory
-    const buffer = Buffer.from(
-      await imageFile.arrayBuffer()
-    );
+    // Baca file sebagai buffer
+    const buffer = Buffer.from(await imageFile.arrayBuffer());
 
-    // klasifikasi langsung dari buffer
+    // Konversi buffer ke base64 data URL
+    const ext = imageFile.type === 'image/png' ? 'png' : 'jpeg';
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:image/${ext};base64,${base64}`;
+
+    // Jalankan klasifikasi AI
     const prediction = await classifyImage(buffer);
 
-    // upload ke Vercel Blob
-    const ext = imageFile.type === 'image/png' ? 'png' : 'jpg';
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
-    const blob = await put(uniqueName, buffer, { access: 'public' });
-    const imageUrl = blob.url;
-
+    // Simpan ke database
     const detection = await prisma.detection.create({
       data: {
-        imageUrl,
+        imageUrl: dataUrl,               // simpan sebagai data URL
         fruitName: prediction.fruitName,
         condition: prediction.condition,
         confidence: prediction.confidence,
       },
     });
 
+    // Kembalikan hasil
     return NextResponse.json({
       id: detection.id,
       fruitName: detection.fruitName,
@@ -65,10 +65,8 @@ export async function POST(request: NextRequest) {
       imageUrl: detection.imageUrl,
       createdAt: detection.createdAt,
     });
-
   } catch (error) {
     console.error('Detection error:', error);
-
     return NextResponse.json(
       { error: 'Terjadi kesalahan saat memproses gambar' },
       { status: 500 }
