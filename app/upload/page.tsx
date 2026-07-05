@@ -66,14 +66,7 @@ export default function UploadPage() {
 
       const result = await res.json();
 
-      // Redirect ke halaman hasil dengan parameter
-      const params = new URLSearchParams({
-        fruitName: result.fruitName,
-        condition: result.condition,
-        confidence: result.confidence.toString(),
-        imageUrl: result.imageUrl,
-      });
-      router.push(`/hasil?${params.toString()}`);
+      router.push(`/hasil?id=${result.id}`);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan");
     } finally {
