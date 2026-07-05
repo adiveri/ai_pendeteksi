@@ -1,5 +1,4 @@
 import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-backend-wasm';
 import * as jpeg from 'jpeg-js';
 import { PNG } from 'pngjs';
 import { Condition } from '@prisma/client';
@@ -12,42 +11,27 @@ const conditionMap: Record<string, Condition> = {
 };
 
 let model: tf.LayersModel | null = null;
-let backendInitialized = false;
 
-// ---------- Inisialisasi Backend WASM ----------
-async function initBackend() {
-  if (!backendInitialized) {
-    // Pastikan file WASM tersedia di public/wasm/
-    const wasm = require('@tensorflow/tfjs-backend-wasm');
-    await wasm.setWasmPaths({
-      'tfjs-backend-wasm.wasm': '/wasm/tfjs-backend-wasm.wasm',
-      'tfjs-backend-wasm-simd.wasm': '/wasm/tfjs-backend-wasm-simd.wasm',
-    });
-    await tf.setBackend('wasm');
-    backendInitialized = true;
-  }
-}
-
-// ---------- Load Model dari URL Publik ----------
+// ---------- Load Model (URL publik, tanpa WASM agar stabil) ----------
 export async function loadModel(): Promise<tf.LayersModel> {
   if (model) return model;
-
-  await initBackend();
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const modelUrl = `${baseUrl}/model/model.json`;
   console.log('Loading model from:', modelUrl);
+  
+  // Gunakan tf.loadLayersModel langsung (fetch internal Node.js)
   model = await tf.loadLayersModel(modelUrl);
   return model;
 }
 
-// ---------- Klasifikasi Gambar ----------
+// ---------- Klasifikasi Gambar (decode manual) ----------
 export async function classifyImage(
   imageBuffer: Buffer
 ): Promise<{ fruitName: string; condition: Condition; confidence: number }> {
   const net = await loadModel();
 
-  // Decode gambar (JPG/PNG)
+  // Decode gambar (JPG/PNG) ke tensor 3 channel
   const magic = imageBuffer[0];
   let imageTensor: tf.Tensor3D;
 
