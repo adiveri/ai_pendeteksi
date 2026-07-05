@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
     // klasifikasi langsung dari buffer
     const prediction = await classifyImage(buffer);
 
-    // sementara pakai placeholder
-    const imageUrl = 'uploaded-image';
+    // ubah buffer jadi base64
+    const imageBase64 = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
 
     const detection = await prisma.detection.create({
       data: {
-        imageUrl,
+        imageUrl: imageBase64,
         fruitName: prediction.fruitName,
         condition: prediction.condition,
         confidence: prediction.confidence,
