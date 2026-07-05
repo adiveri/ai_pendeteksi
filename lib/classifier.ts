@@ -2,8 +2,6 @@ import * as tf from '@tensorflow/tfjs';
 import * as jpeg from 'jpeg-js';
 import { PNG } from 'pngjs';
 import { Condition } from '@prisma/client';
-import fs from 'fs';
-import path from 'path';
 
 // ---------- Konfigurasi ----------
 const conditionMap: Record<string, Condition> = {
@@ -14,57 +12,12 @@ const conditionMap: Record<string, Condition> = {
 
 let model: tf.LayersModel | null = null;
 
-// ---------- Load Model dari Filesystem ----------
 export async function loadModel(): Promise<tf.LayersModel> {
   if (model) return model;
 
-  const modelDir = path.join(process.cwd(), 'public', 'model');
-  const modelJSONPath = path.join(modelDir, 'model.json');
-  const rawJSON = JSON.parse(fs.readFileSync(modelJSONPath, 'utf8'));
-
-  // 1. Susun weightSpecs dan baca semua shard
-  const weightSpecs: tf.io.WeightsManifestEntry[] = [];
-  const weightDataChunks: ArrayBuffer[] = [];
-
-  for (const group of rawJSON.weightsManifest) {
-    for (const weight of group.weights) {
-      weightSpecs.push({
-        name: weight.name,
-        shape: weight.shape,
-        dtype: weight.dtype,
-      });
-    }
-    for (const shardPath of group.paths) {
-      const fullPath = path.join(modelDir, shardPath);
-      const buffer = fs.readFileSync(fullPath);
-      weightDataChunks.push(
-        buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
-      );
-    }
-  }
-
-  // Gabungkan semua ArrayBuffer menjadi satu
-  const totalLength = weightDataChunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
-  const weightData = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of weightDataChunks) {
-    weightData.set(new Uint8Array(chunk), offset);
-    offset += chunk.byteLength;
-  }
-
-  // 2. Buat ModelArtifacts
-  const artifacts: tf.io.ModelArtifacts = {
-    modelTopology: rawJSON.modelTopology,
-    format: rawJSON.format,
-    generatedBy: rawJSON.generatedBy,
-    convertedBy: rawJSON.convertedBy,
-    weightSpecs: weightSpecs,
-    weightData: weightData.buffer,
-  };
-
-  // 3. Load sebagai LayersModel (bukan GraphModel)
-  const handler = tf.io.fromMemory(artifacts);
-  model = await tf.loadLayersModel(handler);
+  // Di Vercel, load dari URL publik
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  model = await tf.loadLayersModel(`${baseUrl}/model/model.json`);
   return model;
 }
 

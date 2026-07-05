@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import { prisma } from '@/lib/prisma';
 import { classifyImage } from '@/lib/classifier';
 
@@ -41,12 +42,15 @@ export async function POST(request: NextRequest) {
     // klasifikasi langsung dari buffer
     const prediction = await classifyImage(buffer);
 
-    // ubah buffer jadi base64
-    const imageBase64 = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+    // upload ke Vercel Blob
+    const ext = imageFile.type === 'image/png' ? 'png' : 'jpg';
+    const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+    const blob = await put(uniqueName, buffer, { access: 'public' });
+    const imageUrl = blob.url;
 
     const detection = await prisma.detection.create({
       data: {
-        imageUrl: imageBase64,
+        imageUrl,
         fruitName: prediction.fruitName,
         condition: prediction.condition,
         confidence: prediction.confidence,
