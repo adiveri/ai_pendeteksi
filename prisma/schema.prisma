@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Detection {
+  id          String    @id @default(uuid())
+  imageUrl    String
+  fruitName   String?
+  condition   Condition
+  confidence  Float
+  createdAt   DateTime  @default(now())
+}
+
+enum Condition {
+  SEHAT
+  SAKIT
+  MENTAH
+  MATANG
+  TERLALU_MATANG
+}

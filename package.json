@@ -9,13 +9,19 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "@tensorflow/tfjs": "^4.22.0",
+    "jpeg-js": "^0.4.4",
     "next": "16.2.10",
+    "pngjs": "^7.0.0",
+    "prisma": "^6.16.2",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pngjs": "^6.0.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
