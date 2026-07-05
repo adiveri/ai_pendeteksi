@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate && mkdir -p public/wasm && cp node_modules/@tensorflow/tfjs-backend-wasm/dist/*.wasm public/wasm/"
+     "postinstall": "prisma generate && copyfiles -u 5 \"node_modules/@tensorflow/tfjs-backend-wasm/dist/*.wasm\" public/wasm/"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
@@ -27,6 +27,7 @@
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "copyfiles": "^2.4.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
